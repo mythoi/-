@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="target-densitydpi=medium-dpi, width=device-width, initial-scale=1, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <meta name="keywords" content="百度地图,百度地图API，百度地图自定义工具，百度地图所见即所得工具" />
+    <meta name="description" content="百度地图API自定义地图，帮助用户在可视化操作下生成百度地图" />
+    <title>百度地图API自定义地图</title>
+    <!--引用百度地图API-->
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=c0BBrdIDc7W6LHAptL5vNYQncM7yxffx	"></script>
+  </head>
+  
+  <body>
+    <!--百度地图容器-->
+    <div style="height:98vh;border:#ccc solid 1px;" id="map"></div>
+  </body>
+  <script type="text/javascript">
+    //创建和初始化地图函数：
+    function initMap(){
+      createMap();//创建地图
+      setMapEvent();//设置地图事件
+      addMapControl();//向地图添加控件
+      addMapOverlay();//向地图添加覆盖物
+    }
+    function createMap(){ 
+      map = new BMap.Map("map"); 
+      map.centerAndZoom(new BMap.Point(109.454722,24.33687),19);
+	  		var myStyleJson=[
+          {
+                    "featureType": "background",
+                    "elementType": "all",
+                    "stylers": {
+                              "color": "#cfe2f3",
+                              "saturation": -54
+                    }
+          }
+		];
+		map.setMapStyle({styleJson: myStyleJson });
+    }
+    function setMapEvent(){
+      map.enableScrollWheelZoom();
+      map.enableKeyboard();
+      map.enableDragging();
+      map.enableDoubleClickZoom();
+	  map.addEventListener("click", showInfo);
+	        var plOpts = [
+        {strokeColor:"#f00",strokeWeight:"4",strokeOpacity:"0.6"}
+      ];
+      
+	    // 西南角和东北角
+  var SW = new BMap.Point(109.446011,24.330308);
+  var NE = new BMap.Point(109.458898,24.34163);
+
+  groundOverlayOptions = {
+    opacity: 1,
+    displayOnMinLevel: 17,
+    displayOnMaxLevel: 19
+  }
+
+  // 初始化GroundOverlay
+  var groundOverlay = new BMap.GroundOverlay(new BMap.Bounds(SW, NE), groundOverlayOptions);
+
+  // 设置GroundOverlay的图片地址
+  groundOverlay.setImageURL('images/map.png');
+      map.addOverlay(groundOverlay);
+	function showInfo(e){
+		 var msg = "您真的确定要到这吗？\n\n请确认！"; 
+		if (confirm(msg)==true)
+		{
+		var geolocation = new BMap.Geolocation(); 
+		geolocation.getCurrentPosition(function(result){  
+		if(this.getStatus() == BMAP_STATUS_SUCCESS)
+		{  
+		var walking = new BMap.WalkingRoute(map, {renderOptions:{map: map, autoViewport: true}});
+		map.clearOverlays();
+		map.addOverlay(groundOverlay);
+		walking.search(result.point, e.point); 
+		}
+		else 
+		 alert('failed'+this.getStatus()); 			
+		 });
+		 }
+		 }
+	}
+
+    function addClickHandler(target,window){
+      target.addEventListener("click",function(){
+        target.openInfoWindow(window);
+      });
+    }
+   function addMapOverlay(){
+
+    }
+    //向地图添加控件
+    function addMapControl(){
+  // 添加定位控件
+  var geolocationControl = new BMap.GeolocationControl();
+  geolocationControl.addEventListener("locationSuccess", function(e){
+    // 定位成功事件
+    var address = '';
+    address += e.addressComponent.province;
+    address += e.addressComponent.city;
+    address += e.addressComponent.district;
+    address += e.addressComponent.street;
+    address += e.addressComponent.streetNumber;
+    //alert("当前定位地址为：" + address);
+  });
+  geolocationControl.addEventListener("locationError",function(e){
+    // 定位失败事件
+    alert(e.message);
+  });
+  	// 定义一个控件类,即function
+	function ZoomControl(){
+	  // 默认停靠位置和偏移量
+	  this.defaultAnchor = BMAP_ANCHOR_TOP_LEFT;
+	  this.defaultOffset = new BMap.Size(10, 10);
+	}
+
+	// 通过JavaScript的prototype属性继承于BMap.Control
+	ZoomControl.prototype = new BMap.Control();
+
+	// 自定义控件必须实现自己的initialize方法,并且将控件的DOM元素返回
+	// 在本方法中创建个div元素作为控件的容器,并将其添加到地图容器中
+	ZoomControl.prototype.initialize = function(map){
+	  // 创建一个DOM元素
+	  var div = document.createElement("div");
+	  // 添加文字说明
+	  div.appendChild(document.createTextNode("广西科技大学"));
+	  // 设置样式
+	  div.style.cursor = "pointer";
+	  div.style.border = "1px solid gray";
+	  div.style.backgroundColor = "white";
+	  // 绑定事件,点击广西科技大学
+	  div.onclick = function(e){
+		map.panTo(new BMap.Point(109.454722,24.33687));//移动到广西科技大学
+		map.setZoom(17);
+	  }
+	  // 添加DOM元素到地图中
+	  map.getContainer().appendChild(div);
+	  // 将DOM元素返回
+	  return div;
+	}
+	// 创建控件
+	var myZoomCtrl = new ZoomControl();
+	// 添加到地图当中
+	map.addControl(myZoomCtrl);
+  map.addControl(geolocationControl);
+    }
+    var map;
+      initMap();
+  </script>
+</html>
